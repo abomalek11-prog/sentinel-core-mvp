@@ -8,9 +8,18 @@ import type {
 const API_BASE = '/api';
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${API_BASE}/health`);
-  if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) {
+      console.error(`[Sentinel] Health check failed with status: ${res.status}`);
+      throw new Error(`Health check failed: ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    console.error('[Sentinel] Backend is unreachable at:', `${window.location.origin}${API_BASE}/health`);
+    console.error('[Sentinel] Error detail:', err);
+    throw err;
+  }
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
