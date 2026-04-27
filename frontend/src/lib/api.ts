@@ -5,7 +5,11 @@ import type {
   SSEEventType,
 } from '@/types/sentinel';
 
-const API_BASE = '/api';
+const API_BASE =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8000/api'
+    : '/api';
 
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch(`${API_BASE}/health`);
