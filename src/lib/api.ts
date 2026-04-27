@@ -6,19 +6,18 @@ import type {
 } from '@/types/sentinel';
 
 const API_BASE = '/api';
-const DIRECT_BACKEND_URL = 'https://sentinel-core-mvp-3.onrender.com/api';
+const DIRECT_BACKEND_URL = 'https://sentinel-core-mvp-3.onrender.com';
 
 async function smartFetch(path: string, options?: RequestInit) {
-  // Always try the direct URL first in production to be safe, 
-  // since we know it works and has CORS enabled.
+  const url = `${DIRECT_BACKEND_URL}/api${path}?t=${Date.now()}`;
   try {
-    const res = await fetch(`${DIRECT_BACKEND_URL}${path}`, options);
+    const res = await fetch(url, options);
     if (res.ok) return res;
   } catch (e) {
-    console.error('[Sentinel] Direct fetch failed, trying proxy...', e);
+    console.error('[Sentinel] Direct fetch failed for:', url, e);
   }
   
-  return fetch(`${API_BASE}${path}`, options);
+  return fetch(`${API_BASE}${path}?t=${Date.now()}`, options);
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
