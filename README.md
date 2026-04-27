@@ -2,6 +2,8 @@
 
 > **AI-powered code analysis and automated bug detection/repair system**
 
+🌐 **[Live Demo](https://sentinel-core-frontend-ruddy.vercel.app)** — Try the interactive UI now!
+
 Sentinel Core is a multi-agent system that reads source code, builds a rich
 **Code Property Graph (CPG)**, and uses that graph to locate bugs and
 generate verified patches — automatically.
