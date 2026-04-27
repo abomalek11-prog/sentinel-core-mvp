@@ -75,7 +75,7 @@ export function AnalyzeToolbar() {
         </button>
 
         {stage === 'done' || stage === 'error' ? (
-          <button
+            title={backendUp === false ? "Cannot reach the security backend. Verify /api/health is responding on the deployed domain." : undefined}
             onClick={reset}
             title="Clear analysis results and start fresh"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-text-muted border border-border hover:border-teal-dim hover:text-text-primary transition-all"
