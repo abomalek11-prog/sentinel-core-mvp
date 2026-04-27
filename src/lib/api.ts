@@ -6,10 +6,22 @@ import type {
 } from '@/types/sentinel';
 
 const API_BASE = '/api';
+const FALLBACK_API_BASE = 'https://sentinel-core-mvp-3.onrender.com/api';
+
+async function smartFetch(path: string, options?: RequestInit) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, options);
+    if (res.ok) return res;
+    throw new Error(`Proxy failed: ${res.status}`);
+  } catch (err) {
+    console.warn(`[Sentinel] Proxy failed for ${path}, trying direct fallback...`, err);
+    return fetch(`${FALLBACK_API_BASE}${path}`, options);
+  }
+}
 
 export async function fetchHealth(): Promise<HealthResponse> {
   try {
-    const res = await fetch(`${API_BASE}/health`);
+    const res = await smartFetch('/health');
     if (!res.ok) {
       console.error(`[Sentinel] Health check failed with status: ${res.status}`);
       throw new Error(`Health check failed: ${res.status}`);
@@ -23,7 +35,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
-  const res = await fetch(`${API_BASE}/demo`);
+  const res = await smartFetch('/demo');
   if (!res.ok) throw new Error(`Demo fetch failed: ${res.status}`);
   return res.json();
 }
@@ -39,7 +51,7 @@ export function streamAnalysis(
 
   (async () => {
     try {
-      const res = await fetch(`${API_BASE}/analyze/stream`, {
+      const res = await smartFetch('/analyze/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
