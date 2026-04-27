@@ -7,18 +7,6 @@ import type {
 
 const API_BASE = '/api';
 
-// Diagnostic check: If we're in a browser and not on localhost, 
-// but API_BASE is being routed to localhost (via next.config rewrites),
-// it might mean NEXT_PUBLIC_API_URL is missing.
-if (typeof window !== 'undefined' && 
-    !window.location.hostname.includes('localhost') && 
-    process.env.NEXT_PUBLIC_API_URL === undefined) {
-  console.warn(
-    '[Sentinel] NEXT_PUBLIC_API_URL is not set. ' +
-    'The frontend will attempt to connect to localhost:8000, which likely won\'t work in production.'
-  );
-}
-
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch(`${API_BASE}/health`);
   if (!res.ok) throw new Error(`Health check failed: ${res.status}`);

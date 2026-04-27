@@ -15,7 +15,7 @@ Start-Sleep -Seconds 3
 
 # ── 2. Start Next.js frontend ─────────────────────────────────
 Write-Host "  [2/2] Starting Next.js frontend on http://localhost:3000 ..." -ForegroundColor Green
-Start-Process -FilePath "cmd.exe" -ArgumentList "/k npm run dev" -WorkingDirectory "c:\Users\AMAL\Desktop\sentinel-core-mvp\frontend"
+Start-Process -FilePath "cmd.exe" -ArgumentList "/k npm run dev" -WorkingDirectory "c:\Users\AMAL\Desktop\sentinel-core-mvp"
 
 Write-Host ""
 Write-Host "  ✓ Backend  → http://localhost:8000" -ForegroundColor Cyan

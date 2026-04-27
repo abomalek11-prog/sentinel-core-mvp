@@ -11,6 +11,14 @@ Or via the helper script:
 from __future__ import annotations
 
 import sys
+import os
+from pathlib import Path
+
+# Add 'src' to PYTHONPATH so sentinel_core can be imported in Vercel functions
+src_path = str(Path(__file__).parent.parent / "src")
+if src_path not in sys.path:
+    sys.path.append(src_path)
+
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -103,9 +111,15 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 # Routers
 # ---------------------------------------------------------------------------
 
+# Include routers both with and without /api prefix to be safe on Vercel
 app.include_router(health_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
 app.include_router(demo_router, prefix="/api")
+
+# Fallback for direct function calls
+app.include_router(health_router)
+app.include_router(analyze_router)
+app.include_router(demo_router)
 
 
 # ---------------------------------------------------------------------------
