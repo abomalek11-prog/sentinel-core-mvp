@@ -5,25 +5,20 @@ import type {
   SSEEventType,
 } from '@/types/sentinel';
 
-const BACKEND_URL =
+const API_BASE =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8000'
-    : 'https://sentinel-core-mvp-3.onrender.com';
-
-async function smartFetch(path: string, options?: RequestInit) {
-  const url = `${BACKEND_URL}${path}`;
-  return fetch(url, options);
-}
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'https://sentinel-core-mvp-3.onrender.com');
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await smartFetch('/health');
+  const res = await fetch(`${API_BASE}/health`);
   if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
   return res.json();
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
-  const res = await smartFetch('/demo');
+  const res = await fetch(`${API_BASE}/demo`);
   if (!res.ok) throw new Error(`Demo fetch failed: ${res.status}`);
   return res.json();
 }
@@ -39,7 +34,7 @@ export function streamAnalysis(
 
   (async () => {
     try {
-      const res = await smartFetch('/analyze/stream', {
+      const res = await fetch(`${API_BASE}/analyze/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
