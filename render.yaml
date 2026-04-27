@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: sentinel-core-backend
+    env: docker
+    plan: free
+    
+    # Health check
+    healthCheckPath: /health
+    
+    # Environment variables
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: SENTINEL_JSON_LOGS
+        value: "true"
+      - key: SENTINEL_LOG_LEVEL
+        value: "INFO"
+      # Add your secrets in Render dashboard:
+      # - SENTINEL_GITHUB_TOKEN
+      # - ANTHROPIC_API_KEY (if using)
+
+  # Optional: Add a PostgreSQL database if needed for future enhancements
+  # - type: pserv
+  #   name: sentinel-db
+  #   plan: free
+  #   ipAllowList: []

@@ -5,19 +5,34 @@ import type {
   SSEEventType,
 } from '@/types/sentinel';
 
-const API_BASE = '/api';
+// API_BASE logic:
+// - On localhost: use /api (proxied to localhost:8000 in dev)
+// - In production: use NEXT_PUBLIC_API_URL if set, otherwise /api
+const getApiBase = (): string => {
+  if (typeof window === 'undefined') {
+    // Server-side
+    return process.env.NEXT_PUBLIC_API_URL || '/api';
+  }
 
-// Diagnostic check: If we're in a browser and not on localhost, 
-// but API_BASE is being routed to localhost (via next.config rewrites),
-// it might mean NEXT_PUBLIC_API_URL is missing.
-if (typeof window !== 'undefined' && 
-    !window.location.hostname.includes('localhost') && 
-    process.env.NEXT_PUBLIC_API_URL === undefined) {
+  // Browser-side
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // Development: use relative path (proxied via next.config)
+    return '/api';
+  }
+
+  // Production: use NEXT_PUBLIC_API_URL if set
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
   console.warn(
     '[Sentinel] NEXT_PUBLIC_API_URL is not set. ' +
-    'The frontend will attempt to connect to localhost:8000, which likely won\'t work in production.'
+    'The frontend will attempt to connect to relative /api, which may not work in production.'
   );
-}
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch(`${API_BASE}/health`);
