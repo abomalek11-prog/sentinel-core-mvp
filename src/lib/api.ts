@@ -5,14 +5,18 @@ import type {
   SSEEventType,
 } from '@/types/sentinel';
 
-const BACKEND_URL =
+const IS_LOCAL =
   typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:8000'
-    : '';
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const DIRECT_BACKEND_URL = IS_LOCAL
+  ? 'http://localhost:8000'
+  : (process.env.NEXT_PUBLIC_API_URL ?? 'https://sentinel-core-mvp-3.onrender.com');
+
+const API_PROXY_BASE = IS_LOCAL ? DIRECT_BACKEND_URL : '';
 
 async function smartFetch(path: string, options?: RequestInit) {
-  const url = `${BACKEND_URL}${path}`;
+  const url = path.startsWith('http') ? path : `${API_PROXY_BASE}${path}`;
   return fetch(url, options);
 }
 
@@ -36,12 +40,15 @@ async function fetchWithFallback(paths: string[], options?: RequestInit) {
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetchWithFallback(['/api/health', '/health'], { cache: 'no-store' });
+  const res = await fetchWithFallback(
+    ['/api/health', `${DIRECT_BACKEND_URL}/health`, `${DIRECT_BACKEND_URL}/api/health`],
+    { cache: 'no-store' },
+  );
   return res.json();
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
-  const res = await fetchWithFallback(['/api/demo', '/demo']);
+  const res = await fetchWithFallback(['/api/demo', `${DIRECT_BACKEND_URL}/demo`]);
   return res.json();
 }
 
@@ -56,12 +63,15 @@ export function streamAnalysis(
 
   (async () => {
     try {
-      const res = await fetchWithFallback(['/api/analyze/stream', '/analyze/stream'], {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-        signal: controller.signal,
-      });
+      const res = await fetchWithFallback(
+        ['/api/analyze/stream', `${DIRECT_BACKEND_URL}/analyze/stream`],
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        },
+      );
 
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No response body');
