@@ -9,17 +9,34 @@ const API_BASE =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8000'
-    : (process.env.NEXT_PUBLIC_API_URL ?? 'https://sentinel-core-mvp-3.onrender.com');
+    : '';
+
+async function fetchWithFallback(paths: string[], options?: RequestInit) {
+  let lastError: Error | null = null;
+
+  for (const path of paths) {
+    try {
+      const res = await fetch(`${API_BASE}${path}`, options);
+      if (!res.ok) {
+        lastError = new Error(`Request failed (${path}): ${res.status}`);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastError = err as Error;
+    }
+  }
+
+  throw lastError ?? new Error('Request failed');
+}
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${API_BASE}/health`);
-  if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
+  const res = await fetchWithFallback(['/api/health', '/health'], { cache: 'no-store' });
   return res.json();
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
-  const res = await fetch(`${API_BASE}/demo`);
-  if (!res.ok) throw new Error(`Demo fetch failed: ${res.status}`);
+  const res = await fetchWithFallback(['/api/demo', '/demo']);
   return res.json();
 }
 
@@ -34,16 +51,12 @@ export function streamAnalysis(
 
   (async () => {
     try {
-      const res = await fetch(`${API_BASE}/analyze/stream`, {
+      const res = await fetchWithFallback(['/api/analyze/stream', '/analyze/stream'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
         signal: controller.signal,
       });
-
-      if (!res.ok) {
-        throw new Error(`Analysis request failed: ${res.status}`);
-      }
 
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No response body');

@@ -9,36 +9,39 @@ const BACKEND_URL =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8000'
-    : (process.env.NEXT_PUBLIC_API_URL ?? 'https://sentinel-core-mvp-3.onrender.com');
+    : '';
 
 async function smartFetch(path: string, options?: RequestInit) {
   const url = `${BACKEND_URL}${path}`;
   return fetch(url, options);
 }
 
-export async function fetchHealth(): Promise<HealthResponse> {
-  const paths = ['/health', '/api/health'];
+async function fetchWithFallback(paths: string[], options?: RequestInit) {
   let lastError: Error | null = null;
 
   for (const path of paths) {
     try {
-      const res = await smartFetch(path, { cache: 'no-store' });
+      const res = await smartFetch(path, options);
       if (!res.ok) {
-        lastError = new Error(`Health check failed (${path}): ${res.status}`);
+        lastError = new Error(`Request failed (${path}): ${res.status}`);
         continue;
       }
-      return res.json();
+      return res;
     } catch (err) {
       lastError = err as Error;
     }
   }
 
-  throw lastError ?? new Error('Health check failed');
+  throw lastError ?? new Error('Request failed');
+}
+
+export async function fetchHealth(): Promise<HealthResponse> {
+  const res = await fetchWithFallback(['/api/health', '/health'], { cache: 'no-store' });
+  return res.json();
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
-  const res = await smartFetch('/demo');
-  if (!res.ok) throw new Error(`Demo fetch failed: ${res.status}`);
+  const res = await fetchWithFallback(['/api/demo', '/demo']);
   return res.json();
 }
 
@@ -53,16 +56,12 @@ export function streamAnalysis(
 
   (async () => {
     try {
-      const res = await smartFetch('/analyze/stream', {
+      const res = await fetchWithFallback(['/api/analyze/stream', '/analyze/stream'], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
         signal: controller.signal,
       });
-
-      if (!res.ok) {
-        throw new Error(`Analysis request failed: ${res.status}`);
-      }
 
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No response body');
