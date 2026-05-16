@@ -12,12 +12,29 @@ export function AnalyzeToolbar() {
   const [model, setModel] = useState('');
 
   useEffect(() => {
-    fetchHealth()
-      .then(h => {
+    let alive = true;
+
+    const checkHealth = async () => {
+      try {
+        const h = await fetchHealth();
+        if (!alive) return;
         setBackendUp(true);
         setModel(h.llm_model || '');
-      })
-      .catch(() => setBackendUp(false));
+      } catch {
+        if (!alive) return;
+        setBackendUp(false);
+      }
+    };
+
+    void checkHealth();
+    const timer = window.setInterval(() => {
+      void checkHealth();
+    }, 20000);
+
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const loadDemo = async () => {
@@ -75,9 +92,13 @@ export function AnalyzeToolbar() {
         </button>
 
         {stage === 'done' || stage === 'error' ? (
-            title={backendUp === false ? "Cannot reach the security backend. Verify NEXT_PUBLIC_API_URL and backend /health." : undefined}
+          <button
             onClick={reset}
-            title="Clear analysis results and start fresh"
+            title={
+              backendUp === false
+                ? 'Cannot reach the security backend. Verify NEXT_PUBLIC_API_URL and backend /health.'
+                : 'Clear analysis results and start fresh'
+            }
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-text-muted border border-border hover:border-teal-dim hover:text-text-primary transition-all"
           >
             <RotateCcw size={12} />

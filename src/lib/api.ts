@@ -9,7 +9,7 @@ const BACKEND_URL =
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8000'
-    : 'https://sentinel-core-mvp-3.onrender.com';
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'https://sentinel-core-mvp-3.onrender.com');
 
 async function smartFetch(path: string, options?: RequestInit) {
   const url = `${BACKEND_URL}${path}`;
@@ -17,9 +17,23 @@ async function smartFetch(path: string, options?: RequestInit) {
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await smartFetch('/health');
-  if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
-  return res.json();
+  const paths = ['/health', '/api/health'];
+  let lastError: Error | null = null;
+
+  for (const path of paths) {
+    try {
+      const res = await smartFetch(path, { cache: 'no-store' });
+      if (!res.ok) {
+        lastError = new Error(`Health check failed (${path}): ${res.status}`);
+        continue;
+      }
+      return res.json();
+    } catch (err) {
+      lastError = err as Error;
+    }
+  }
+
+  throw lastError ?? new Error('Health check failed');
 }
 
 export async function fetchDemo(): Promise<DemoResponse> {
